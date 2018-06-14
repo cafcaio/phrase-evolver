@@ -14,21 +14,25 @@ var averageFitness;
 
 
 function setup() {
+  //Parâmetros
   popSize = 200;
-  mutationRate = 0.01;
+  mutationRate = 0.02;
   target = "To be or not to be.";
   generations = 0;
   dnaLength = target.length;
   matingPoolSize = popSize;
 
-  population = new Population(popSize, dnaLength);
 
+//
+  population = new Population(popSize, dnaLength);
   createCanvas(1000, 1000);
 
 
 }
 
 
+//Equivalente à função void loop() do Arduino
+//Executada 60 vezes por segundo (máximo FPS do computador)
 function draw() {
   let cycleTime = millis();
 
@@ -41,17 +45,12 @@ function draw() {
   let selectionTime = millis();
 
 
-  //Selection
+  //******** SELEÇÃO ********
 
-
-  //4 methods for selection
+  //Criação da mating pool (2 métodos disponíveis)
 
   // population.matingPoolFromLinearScaling(matingPoolSize);
-  // population.matingPoolFromLinearRanking(matingPoolSize);
-  // population.matingPoolFromSubtractMethod(matingPoolSize);
-  population.matingPoolFromFPS(matingPoolSize);
-
-  let matingPool = population.matingPool;
+  population.matingPoolFromLinearRanking(matingPoolSize);
 
 
   selectionTime = millis() - selectionTime;
@@ -62,19 +61,26 @@ function draw() {
 
   let reproductionTime = millis();
 
+  //******** REPRODUÇÃO ********
   for (let i = 0; i < popSize; i++) {
 
-    let parentA = pickOne(matingPool);
-    let parentB = pickOne(matingPool);
+    //Escolhe dois pais
+    let parentA = pickOne(population.matingPool);
+    let parentB = pickOne(population.matingPool);
 
-
+    //******** RECOMBINAÇÃO (crossover) ********
     let child = DNA.crossover(parentA, parentB);
-    // let child = DNA.crossoverEnhanced(parentA, parentB); //much slower!
 
+    //******** MUTAÇÃO ********
     child.mutate(mutationRate);
+
+    //Atualiza a nota (fitness) do indivíduo
     child.setFitness(target);
+
+    //Insere o filho na população
     population.pop[i] = child;
 
+    //Procura melhor nota para fins de exibição
     if (child.fitness > bestFitness) {
       bestFitness = child.fitness;
       bestFitnessIndex = i;
@@ -82,13 +88,13 @@ function draw() {
   }
   reproductionTime = millis() - reproductionTime;
 
-
+  //Calcula nota média para exibição
   averageFitness = population.getAverageFitness();
 
   cycleTime = millis() - cycleTime;
 
 
-  //stats
+  //Imprime estatísticas
   let sW = 50;
   let sH = 200;
   textSize(12);
@@ -110,12 +116,13 @@ function draw() {
 
   let spacing = 20;
   let maxLines = (height - 30) / spacing;
+  if(maxLines>population.pop.length) maxLines = population.pop.length;
   for (let i = 0; i < maxLines; i++) {
     text(population.pop[i].getPhenotype(), 600, 30 + spacing * i, 300);
   }
 
 
-
+  //Para exibição se encontrar um indivíduo idêntico à frase-alvo
   if (bestFitness == 1) {
     noLoop();
   }
